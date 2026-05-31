@@ -1,4 +1,4 @@
-﻿using RedVault.Utilities;
+﻿using RedVault.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -21,22 +21,10 @@ namespace RedVault.Collectors
         const string TranscriptPath =
             @"C:\Users\{0}\Documents";
 
-        public static string[] GetUsers()
-        {
-            string[] excluded = { "Public", "Default", "Default User", "All Users" };
-
-            var list = Directory.GetDirectories(@"C:\Users")
-                .Select(Path.GetFileName)
-                .Where(item => !string.IsNullOrEmpty(item))
-                .Where(item => !excluded.Contains(item, StringComparer.OrdinalIgnoreCase)).ToArray();
-
-            return list;
-        }
-
         public static void Run()
         {
             Console.WriteLine("Reading PS History & Trans for readable users....");
-            var users = GetUsers();
+            var users = Helpers.FileHelper.GetUsers();
 
             foreach(var user in users)
             {
@@ -55,7 +43,7 @@ namespace RedVault.Collectors
                         Console.WriteLine("[PowerShell History]");
                         Console.WriteLine($"Path: {psinfo.Path}");
                         Console.WriteLine($"Lines: {psinfo.LineCount}");
-                        Console.WriteLine($"Size: {Utilities.FileHelper.FormatSize(psinfo.SizeBytes)}");
+                        Console.WriteLine($"Size: {Helpers.FileHelper.FormatSize(psinfo.SizeBytes)}");
                         Console.WriteLine();
 
                     }
@@ -72,20 +60,18 @@ namespace RedVault.Collectors
                         int tcount = 0;
                         long tsize = 0;
 
-                        var tdir = Directory.GetFiles(tpath, "PowerShell_transcript*", SearchOption.TopDirectoryOnly);
-
-                        tcount = tdir.Length;
+                        var tdir = Directory.EnumerateFiles(tpath, "PowerShell_transcript*", SearchOption.TopDirectoryOnly);
 
                         foreach (var file in tdir)
                         {
-                            
+                            tcount++;
                             tsize += new FileInfo(file).Length;
                         }
 
                         Console.WriteLine("[PowerShell Transcript]");
                         Console.WriteLine($"Path: {String.Join("", tpath, @"\PowerShell_transcript*")}");
                         Console.WriteLine($"Found: {tcount}");
-                        Console.WriteLine($"Total Size: {Utilities.FileHelper.FormatSize(tsize)}");
+                        Console.WriteLine($"Total Size: {Helpers.FileHelper.FormatSize(tsize)}");
                     }
                     catch (Exception ex) { Console.WriteLine(ex.Message); }
                 }
