@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <Folder Include="Classes\" />
+    <Folder Include="Helpers\DPAPI\Vault\" />
   </ItemGroup>
 
   <ItemGroup>

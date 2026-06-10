@@ -23,7 +23,11 @@ namespace RedVault.Collectors
                 @"C:\Windows\system32\config\default.sav",
                 @"C:\Windows\system32\config\security.sav",
                 @"C:\Windows\system32\config\software.sav",
-                @"C:\Windows\system32\config\system.sav"
+                @"C:\Windows\system32\config\system.sav",
+                @"C:\Windows\system32\config\RegBack\SAM",
+                @"C:\Windows\system32\config\SAM",
+                @"C:\Windows\system32\config\SYSTEM",
+                @"C:\Windows\system32\config\RegBack\SYSTEM",
 
             };
 
