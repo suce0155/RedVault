@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml.Linq;
+using static RedVault.Modules.m_wlan;
 
-namespace RedVault.Collectors.Wifi
+namespace RedVault.Collectors.DPAPI
 {
     internal class Wifi
     {
@@ -12,7 +13,7 @@ namespace RedVault.Collectors.Wifi
         public static void Run()
         {
             Console.WriteLine("[Enumerating Wifi Passwords...]");
-            uint result = WlanApi.WlanOpenHandle(2, IntPtr.Zero, out uint apiversion, out IntPtr cHandle);
+            uint result = WlanOpenHandle(2, IntPtr.Zero, out uint apiversion, out IntPtr cHandle);
              
             if (result != 0)
             {
@@ -20,7 +21,7 @@ namespace RedVault.Collectors.Wifi
                 return;
             }
 
-            result = WlanApi.WlanEnumInterfaces(cHandle, IntPtr.Zero, out IntPtr pIntList);
+            result = WlanEnumInterfaces(cHandle, IntPtr.Zero, out IntPtr pIntList);
 
             if (result != 0) 
             {
@@ -42,7 +43,7 @@ namespace RedVault.Collectors.Wifi
                 WLAN_INTERFACE_INFO intInfo = Marshal.PtrToStructure<WLAN_INTERFACE_INFO>(current);
 
 
-                result = WlanApi.WlanGetProfileList(cHandle, ref intInfo.InterfaceGuid, IntPtr.Zero, out IntPtr pProfileList);
+                result = WlanGetProfileList(cHandle, ref intInfo.InterfaceGuid, IntPtr.Zero, out IntPtr pProfileList);
 
                 if (result != 0)
                 {
@@ -68,7 +69,7 @@ namespace RedVault.Collectors.Wifi
                     Console.WriteLine($"Profile: {profileInfo.ProfileName}");
                     
 
-                    result = WlanApi.WlanGetProfile(cHandle, ref intInfo.InterfaceGuid, profileInfo.ProfileName, IntPtr.Zero, out IntPtr pProfileXml, ref flags, out _);
+                    result = WlanGetProfile(cHandle, ref intInfo.InterfaceGuid, profileInfo.ProfileName, IntPtr.Zero, out IntPtr pProfileXml, ref flags, out _);
 
                     if (result != 0) 
                     {
@@ -102,16 +103,16 @@ namespace RedVault.Collectors.Wifi
                     {
                         Console.WriteLine("[-] No key material found");
                     }
-                    WlanApi.WlanFreeMemory(pProfileXml);
+                    WlanFreeMemory(pProfileXml);
 
                 }
 
-                WlanApi.WlanFreeMemory(pProfileList);
+                WlanFreeMemory(pProfileList);
 
             }
 
-            WlanApi.WlanFreeMemory(pIntList);
-            WlanApi.WlanCloseHandle(cHandle, IntPtr.Zero);
+            WlanFreeMemory(pIntList);
+            WlanCloseHandle(cHandle, IntPtr.Zero);
         }
 
 
